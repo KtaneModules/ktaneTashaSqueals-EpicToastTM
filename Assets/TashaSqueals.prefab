@@ -1331,7 +1331,8 @@ MonoBehaviour:
   - {fileID: 23434140912487534}
   - {fileID: 23555148304078256}
   - {fileID: 23026492491861472}
-  TwitchHelpMessage: Use !{0} press top left right bottom to press buttons.
+  TwitchHelpMessage: Use !{0} press pink blue green yellow to press buttons. You can
+    also use the first letters, or positions.
 --- !u!114 &114670497952598240
 MonoBehaviour:
   m_ObjectHideFlags: 1

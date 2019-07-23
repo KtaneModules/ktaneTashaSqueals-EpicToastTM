@@ -320,18 +320,29 @@ public class tashaSquealsScript : MonoBehaviour {
         Lights[btnNum].enabled = false;
     }
 
-    public string TwitchHelpMessage = "Use !{0} press top left right bottom to press buttons.";
+    public string TwitchHelpMessage = "Use !{0} press pink blue green yellow to press buttons. You can also use the first letters, or positions.";
     IEnumerator ProcessTwitchCommand(string cmd)
     {
+        string[] acceptableWords = { "top", "right", "bottom", "left", "pink", "green", "yellow", "blue", "p", "g", "y", "b" };
+
         if (cmd.ToLowerInvariant().StartsWith("press "))
         {
-            string btns = cmd.Substring(6);
+            string btns = cmd.Substring(6).ToLowerInvariant();
             string[] btnSequence = btns.Split(' ');
 
             if (btnSequence.Length > 5)
             {
                 yield return "sendtochaterror That's more than 5 buttons :/";
                 yield break;
+            }
+
+            foreach (var btn in btnSequence)
+            {
+                if (!acceptableWords.Contains(btn))
+                {
+                    yield return "sendtochaterror One of those buttons isn't a valid button...";
+                    yield break;
+                }
             }
 
             foreach (var btn in btnSequence)
@@ -353,15 +364,29 @@ public class tashaSquealsScript : MonoBehaviour {
                     yield return new KMSelectable[] { btnSelectables[2] };
                 }
 
-                else if (btn == "left")
+                else if (btn == "right")
                 {
                     yield return new KMSelectable[] { btnSelectables[3] };
                 }
 
-                else
+                else if (btn == "pink" || btn == "p")
                 {
-                    yield return "sendtochaterror One of those buttons isn't a valid button...";
-                    yield break;
+                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 0)] };
+                }
+
+                else if (btn == "green" || btn == "g")
+                {
+                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 1)] };
+                }
+                
+                else if (btn == "yellow" || btn == "y")
+                {
+                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 2)] };
+                }
+                
+                else if (btn == "blue" || btn == "b")
+                {
+                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 3)] };
                 }
             }
         }
