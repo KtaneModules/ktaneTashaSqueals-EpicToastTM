@@ -320,7 +320,9 @@ public class tashaSquealsScript : MonoBehaviour {
         Lights[btnNum].enabled = false;
     }
 
-    public string TwitchHelpMessage = "Use !{0} press pink blue green yellow to press buttons. You can also use the first letters, or positions.";
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = "Use !{0} press pink blue green yellow to press buttons. You can also use the first letters, or positions.";
+    #pragma warning disable 414
     IEnumerator ProcessTwitchCommand(string cmd)
     {
         string[] acceptableWords = { "top", "right", "bottom", "left", "pink", "green", "yellow", "blue", "p", "g", "y", "b" };
@@ -336,58 +338,59 @@ public class tashaSquealsScript : MonoBehaviour {
                 yield break;
             }
 
-            foreach (var btn in btnSequence)
+            for (int i = 0; i < btnSequence.Length; i++)
             {
-                if (!acceptableWords.Contains(btn))
+                if (!acceptableWords.Contains(btnSequence[i]))
                 {
                     yield return "sendtochaterror One of those buttons isn't a valid button...";
                     yield break;
                 }
             }
 
-            foreach (var btn in btnSequence)
+            yield return null;
+            for (int i = 0; i < btnSequence.Length; i++)
             {
-                yield return null;
-
-                if (btn == "top")
+                if (btnSequence[i].Equals("top"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[0] };
+                    btnSelectables[0].OnInteract();
                 }
 
-                else if (btn == "right")
+                else if (btnSequence[i].Equals("right"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[1] };
+                    btnSelectables[1].OnInteract();
                 }
 
-                else if (btn == "bottom")
+                else if (btnSequence[i].Equals("bottom"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[2] };
+                    btnSelectables[2].OnInteract();
                 }
 
-                else if (btn == "right")
+                else if (btnSequence[i].Equals("left"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[3] };
+                    btnSelectables[3].OnInteract();
                 }
 
-                else if (btn == "pink" || btn == "p")
+                else if (btnSequence[i].Equals("pink") || btnSequence[i].Equals("p"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 0)] };
+                    btnSelectables[Array.IndexOf(btnColors, 0)].OnInteract();
                 }
 
-                else if (btn == "green" || btn == "g")
+                else if (btnSequence[i].Equals("green") || btnSequence[i].Equals("g"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 1)] };
+                    btnSelectables[Array.IndexOf(btnColors, 1)].OnInteract();
                 }
                 
-                else if (btn == "yellow" || btn == "y")
+                else if (btnSequence[i].Equals("yellow") || btnSequence[i].Equals("y"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 2)] };
+                    btnSelectables[Array.IndexOf(btnColors, 2)].OnInteract();
                 }
                 
-                else if (btn == "blue" || btn == "b")
+                else if (btnSequence[i].Equals("blue") || btnSequence[i].Equals("b"))
                 {
-                    yield return new KMSelectable[] { btnSelectables[Array.IndexOf(btnColors, 3)] };
+                    btnSelectables[Array.IndexOf(btnColors, 3)].OnInteract();
                 }
+
+                yield return new WaitForSeconds(0.1f);
             }
         }
 
