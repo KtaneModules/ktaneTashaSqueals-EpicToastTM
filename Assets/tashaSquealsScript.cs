@@ -10,13 +10,16 @@ public class tashaSquealsScript : MonoBehaviour {
     public KMBombModule Module;
     public KMBombInfo Bomb;
     public KMAudio Audio;
+    public KMColorblindMode Colorblind;
     public KMSelectable[] btnSelectables;
     public Light[] Lights;
     public MeshRenderer[] btnRenderers;
+    public GameObject[] colorblindTexts;
 
     private static int _moduleIdCounter = 1;
     private int _moduleId;
     private bool solved;
+    private bool colorblindActive = false;
     private int[] btnColors = { 0, 1, 2, 3 };
     private string[] soundNames = { "High", "NotAsHigh", "NotAsHighAsNotAsHigh", "NotHigh" };
     private static readonly Color32[] materialColors = { new Color32(236, 0, 220, 255), new Color32(0, 182, 0, 255), new Color32(223, 226, 0, 255), new Color32(21, 21, 161, 255) };
@@ -36,6 +39,7 @@ public class tashaSquealsScript : MonoBehaviour {
             Lights[i].enabled = false;
         }
 
+        colorblindActive = Colorblind.ColorblindModeActive;
         _moduleId = _moduleIdCounter++;
         Module.OnActivate += Activate;
 
@@ -49,14 +53,21 @@ public class tashaSquealsScript : MonoBehaviour {
             int j = i;
             btnSelectables[i].OnInteract += delegate ()
             {
+                StopAllCoroutines();
                 if (!solved)
                     ButtonPress(j);
                 btnSelectables[j].AddInteractionPunch(2);
-                Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Module.transform);
-                Audio.PlaySoundAtTransform(soundNames[j], Module.transform);
+                Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, btnSelectables[j].transform);
+                Audio.PlaySoundAtTransform(soundNames[j], btnSelectables[j].transform);
+                for (int k = 0; k < 4; k++)
+                {
+                    Lights[k].enabled = false;
+                }
+                StartCoroutine(SingleFlash(j));
                 return false;
             };
         }
+        StartCoroutine(DoTheFlashyFlash());
     }
     
     void GenerateModule()
@@ -68,6 +79,10 @@ public class tashaSquealsScript : MonoBehaviour {
             DebugMsg("The " + positionNames[i] + " button is " + colorNames[btnColors[i]] + ".");
             btnRenderers[i].material.color = materialColors[btnColors[i]];
             Lights[i].color = materialColors[btnColors[i]];
+            if (colorblindActive)
+            {
+                colorblindTexts[i].GetComponent<TextMesh>().text = colorNames[btnColors[i]];
+            }
         }
 
         for (int i = 0; i < 5; i++)
@@ -218,22 +233,11 @@ public class tashaSquealsScript : MonoBehaviour {
                 answers[i] = Array.IndexOf(currentColumn, flashing[i]);
             DebugMsg("The color you should press for Stage #" + (i + 1) + " is " + colorNames[answers[i]] + ".");
         }
-
-        StartCoroutine(DoTheFlashyFlash());
     }
 
     void ButtonPress(int btnNum)
     {
         anyBtnPressed = true;
-
-        StopAllCoroutines();
-
-        for (int i = 0; i < 4; i++)
-        {
-            Lights[i].enabled = false;
-        }
-
-        StartCoroutine(SingleFlash(btnNum));
 
         DebugMsg("You pressed the " + colorNames[btnColors[btnNum]] + " button.");
         if (btnNum == Array.IndexOf(btnColors, answers[pressed]))
@@ -292,7 +296,7 @@ public class tashaSquealsScript : MonoBehaviour {
                 
                 if (anyBtnPressed)
                 {
-                    Audio.PlaySoundAtTransform(soundNames[Array.IndexOf(btnColors, flashing[flash])], Module.transform);
+                    Audio.PlaySoundAtTransform(soundNames[Array.IndexOf(btnColors, flashing[flash])], btnSelectables[Array.IndexOf(btnColors, flashing[flash])].transform);
                 }
 
                 yield return new WaitForSeconds(1f);
@@ -320,8 +324,9 @@ public class tashaSquealsScript : MonoBehaviour {
         Lights[btnNum].enabled = false;
     }
 
+    //twitch plays
     #pragma warning disable 414
-    private readonly string TwitchHelpMessage = "Use !{0} press pink blue green yellow to press buttons. You can also use the first letters, or positions.";
+    private readonly string TwitchHelpMessage = "Use !{0} press pink blue green yellow to press buttons. You can also use the first letters, or positions. Use !{0} colorblind to toggle colorblind mode.";
     #pragma warning disable 414
     IEnumerator ProcessTwitchCommand(string cmd)
     {
@@ -332,6 +337,7 @@ public class tashaSquealsScript : MonoBehaviour {
             string btns = cmd.Substring(6).ToLowerInvariant();
             string[] btnSequence = btns.Split(' ');
 
+            yield return null;
             if (btnSequence.Length > 5)
             {
                 yield return "sendtochaterror That's more than 5 buttons :/";
@@ -347,7 +353,6 @@ public class tashaSquealsScript : MonoBehaviour {
                 }
             }
 
-            yield return null;
             for (int i = 0; i < btnSequence.Length; i++)
             {
                 if (btnSequence[i].Equals("top"))
@@ -393,10 +398,50 @@ public class tashaSquealsScript : MonoBehaviour {
                 yield return new WaitForSeconds(0.1f);
             }
         }
-
+        else if (cmd.EqualsIgnoreCase("colorblind"))
+        {
+            yield return null;
+            if (colorblindActive)
+            {
+                colorblindActive = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    colorblindTexts[i].GetComponent<TextMesh>().text = "";
+                }
+            }
+            else
+            {
+                colorblindActive = true;
+                for (int i = 0; i < 4; i++)
+                {
+                    colorblindTexts[i].GetComponent<TextMesh>().text = colorNames[btnColors[i]];
+                }
+            }
+        }
         else
         {
             yield break;
+        }
+    }
+
+    IEnumerator TwitchHandleForcedSolve()
+    {
+        int start = stageNum;
+        for (int i = start; i < 5; i++)
+        {
+            int start2 = pressed;
+            for (int j = start2; j < i+1; j++)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    if (colorNames[answers[j]] == colorNames[btnColors[k]])
+                    {
+                        btnSelectables[k].OnInteract();
+                        yield return new WaitForSeconds(0.1f);
+                        break;
+                    }
+                }
+            }
         }
     }
 }
